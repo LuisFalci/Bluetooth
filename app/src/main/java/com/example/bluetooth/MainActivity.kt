@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var bluetoothManager: BluetoothManager
     lateinit var receiver: BluetoothReceiver
     lateinit var receiver2: DiscoverabilityReceiver
+    var deviceCount = 0
     var permission: Boolean = false
     val REQUEST_ACCESS_COARSE_LOCATION = 101
 
@@ -48,25 +49,36 @@ class MainActivity : AppCompatActivity() {
         binding.btGetPairedDevices.setOnClickListener {
             getPairedDevices()
         }
-        binding.btDiscoverDevices.setOnClickListener{
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
-                when(ContextCompat.checkSelfPermission(
-                    baseContext,Manifest.permission.ACCESS_COARSE_LOCATION
-                )){
-                    PackageManager.PERMISSION_DENIED -> androidx.appcompat.app.AlertDialog.Builder(this)
+        binding.btDiscoverDevices.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                when (ContextCompat.checkSelfPermission(
+                    baseContext, Manifest.permission.ACCESS_COARSE_LOCATION
+                )) {
+                    PackageManager.PERMISSION_DENIED -> androidx.appcompat.app.AlertDialog.Builder(
+                        this
+                    )
                         .setTitle("Runtime Permission")
                         .setMessage("Give Permission")
-                        .setNeutralButton("Okay",DialogInterface.OnClickListener{dialog, which ->
-                            if(ContextCompat.checkSelfPermission(baseContext,Manifest.permission.ACCESS_COARSE_LOCATION)!=
-                                PackageManager.PERMISSION_GRANTED){
-                                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),REQUEST_ACCESS_COARSE_LOCATION)
+                        .setNeutralButton("Okay", DialogInterface.OnClickListener { dialog, which ->
+                            if (ContextCompat.checkSelfPermission(
+                                    baseContext,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                ) !=
+                                PackageManager.PERMISSION_GRANTED
+                            ) {
+                                ActivityCompat.requestPermissions(
+                                    this,
+                                    arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                                    REQUEST_ACCESS_COARSE_LOCATION
+                                )
                             }
                         })
                         .show()
-                        .findViewById<TextView>(R.id.message)!!.movementMethod = LinkMovementMethod.getInstance()
+                        .findViewById<TextView>(R.id.message)!!.movementMethod =
+                        LinkMovementMethod.getInstance()
 
-                    PackageManager.PERMISSION_GRANTED ->{
-                        Log.d("discoverDevices","Permission Granted")
+                    PackageManager.PERMISSION_GRANTED -> {
+                        Log.d("discoverDevices", "Permission Granted")
                     }
                 }
             }
@@ -81,30 +93,61 @@ class MainActivity : AppCompatActivity() {
         filter.addAction(BluetoothDevice.ACTION_FOUND)
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        registerReceiver(discoverDeviceReceiver,filter)
+        registerReceiver(discoverDeviceReceiver, filter)
         bluetoothAdapter.startDiscovery()
     }
-    private val discoverDeviceReceiver = object : BroadcastReceiver(){
+
+    private val discoverDeviceReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
         override fun onReceive(context: Context?, intent: Intent?) {
             var action = ""
-            if(intent!=null){
+            if (intent != null) {
                 action = intent.action.toString()
             }
-            when(action){
-                BluetoothAdapter.ACTION_STATE_CHANGED ->{
-                    Log.d("discoverDevices1","STATE CHANGED")
+            when (action) {
+                BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                    Log.d("discoverDevices1", "STATE CHANGED")
                 }
-                BluetoothAdapter.ACTION_DISCOVERY_STARTED ->{
-                    Log.d("discoverDevices2","Discovery Started")
+
+                BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+                    Log.d("discoverDevices2", "Discovery Started")
                 }
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED ->{
-                    Log.d("discoverDevices3","Disvcoery Fininshed")
+
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                    Log.d("discoverDevices3", "Disvcoery Fininshed")
                 }
-                BluetoothDevice.ACTION_FOUND ->{
-                    val device = intent?.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                    if(device!=null){
-                        Log.d("discoverDevices4","${device.name}  ${device.address}")
+
+                BluetoothDevice.ACTION_FOUND -> {
+                    val device =
+                        intent?.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                    if (device != null) {
+                        Log.d("discoverDevices4", "${device.name}  ${device.address}")
+                        deviceCount++
+                        when(deviceCount){
+                            1->{
+                                binding.device1.text = device.name
+                            }
+                            2->{
+                                binding.device2.text = device.name
+                            }
+                            3->{
+                                binding.device3.text = device.name
+                                binding.device3.setOnClickListener{
+                                    device.createBond()
+                                }
+                            }
+                        }
+                        when(device.bondState){
+                            BluetoothDevice.BOND_NONE->{
+                                Log.d("Bluetooth bond status", "${device.name} bond none")
+                            }
+                            BluetoothDevice.BOND_BONDING->{
+                                Log.d("Bluetooth bond status", "${device.name} bond bonding")
+                            }
+                            BluetoothDevice.BOND_BONDED->{
+                                Log.d("Bluetooth bond status", "${device.name} bonded")
+                            }
+                        }
                     }
                 }
             }
@@ -115,10 +158,10 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun getPairedDevices() {
         var arr = bluetoothAdapter.bondedDevices
-        Log.d("bondedDevices",arr.size.toString())
-        Log.d("bondedDevices",arr.toString())
-        for(device in arr){
-            Log.d("bondedDevices",device.name+"   "+device.address + "   "+device.bondState)
+        Log.d("bondedDevices", arr.size.toString())
+        Log.d("bondedDevices", arr.toString())
+        for (device in arr) {
+            Log.d("bondedDevices", device.name + "   " + device.address + "   " + device.bondState)
         }
     }
 
