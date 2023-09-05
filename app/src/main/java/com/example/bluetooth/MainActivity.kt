@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -95,6 +96,14 @@ class MainActivity : AppCompatActivity() {
         val layoutManager = LinearLayoutManager(applicationContext)
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = deviceAdapter
+
+        val listener = object : OnDeviceClickListener {
+            override fun onDeviceClick(address: String) {
+               pairWithDevice(address)
+            }
+        }
+
+        deviceAdapter.attachListener(listener)
     }
 
     @SuppressLint("MissingPermission")
@@ -134,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                     if (device != null) {
                         Log.d("discoverDevices4", "${device.name}  ${device.address}")
                         deviceCount++
-                        devicesList.add("${device.name}  ${device.address}")
+                        devicesList.add("${device.name}->${device.address}")
                         deviceAdapter.notifyDataSetChanged()
 
                         when(device.bondState){
@@ -197,6 +206,18 @@ class MainActivity : AppCompatActivity() {
         val intentFilter = IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
         registerReceiver(receiver2, intentFilter)
     }
+    @SuppressLint("MissingPermission")
+    private fun pairWithDevice(macAddress: String){
+        val remoteDevice = bluetoothAdapter.getRemoteDevice(macAddress)
+        try {
+            remoteDevice.createBond()
+            Log.d("pairStatus", "pair succes")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d("pairStatus", "pair failed")
+        }
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()
