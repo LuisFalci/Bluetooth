@@ -18,6 +18,8 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.bluetooth.databinding.ActivityMainBinding
 import dalvik.system.PathClassLoader
 import org.w3c.dom.Text
@@ -32,6 +34,9 @@ class MainActivity : AppCompatActivity() {
     var deviceCount = 0
     var permission: Boolean = false
     val REQUEST_ACCESS_COARSE_LOCATION = 101
+
+    private lateinit var deviceAdapter: DeviceAdapter
+    private val devicesList = ArrayList<String>()
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +89,12 @@ class MainActivity : AppCompatActivity() {
             }
             discoverDevices()
         }
+
+        val recyclerView: RecyclerView = binding.deviceRecycler
+        deviceAdapter = DeviceAdapter(devicesList)
+        val layoutManager = LinearLayoutManager(applicationContext)
+        recyclerView.layoutManager = layoutManager
+        recyclerView.adapter = deviceAdapter
     }
 
     @SuppressLint("MissingPermission")
@@ -123,20 +134,9 @@ class MainActivity : AppCompatActivity() {
                     if (device != null) {
                         Log.d("discoverDevices4", "${device.name}  ${device.address}")
                         deviceCount++
-                        when(deviceCount){
-                            1->{
-                                binding.device1.text = device.name
-                            }
-                            2->{
-                                binding.device2.text = device.name
-                            }
-                            3->{
-                                binding.device3.text = device.name
-                                binding.device3.setOnClickListener{
-                                    device.createBond()
-                                }
-                            }
-                        }
+                        devicesList.add("${device.name}  ${device.address}")
+                        deviceAdapter.notifyDataSetChanged()
+
                         when(device.bondState){
                             BluetoothDevice.BOND_NONE->{
                                 Log.d("Bluetooth bond status", "${device.name} bond none")
